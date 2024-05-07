@@ -1,60 +1,112 @@
-const fs = require('fs');
+const tourmodel = require('../Models/tourSchema'); 
 
-const tours = JSON.parse(
-    fs.readFileSync(`./dev-data/data/tours-simple.json`)
-  );
-  
-  exports.checkId = (req,res,next,val)=>{
-    if(req.params.id > tours.length){
-        return res.status(404).json({
-            status:'fail',
-            message:'Invalid Id'
-        })
-    }
 
-    next();
-  }
+// const fs = require('fs');
+
+// const tours = JSON.parse(
+//     fs.readFileSync(`./dev-data/data/tours-simple.json`)
+//   );
   
-  exports.getTours = (req, res) => {
-    res.status(200).json({
-      staus: 'success',
-      data: { tours: tours },
-    });
-  };
+//   exports.checkId = (req,res,next,val)=>{
+//     if(req.params.id > tours.length){
+//         return res.status(404).json({
+//             status:'fail',
+//             message:'Invalid Id'
+//         })
+//     }
+
+//     next();
+//   }
+
+//   exports.checkReqBody = (req, res, next) => {
+//     if (req.body.hasOwnProperty('name') && req.body.hasOwnProperty('price')) {
+//       next();
+//     } else {
+//       res.status(400).json({
+//         status: 'error',
+//         message: 'there is no property'
+//       });
+//     }
+//   };
   
-  exports.postTour = (req, res) => {
-    console.log(req.body);
-    const id = tours[tours.length - 1].id + 1;
   
-    const newTour = Object.assign({ id: id }, req.body);
-  
-    tours.push(newTour);
-    fs.writeFile(
-      `${__dirname}/dev-data/data/tours-simple.json`,
-      JSON.stringify(tours),
-      (err) => {
-        res.status(201).json({
-          staus: 'success',
-          data: { tours: newTour },
-        });
-      }
-    );
-  };
-  
-  exports.getTour = (req, res) => {
-    const id = req.params.id * 1;
-  
-    const result = tours.find((el) => el.id === id);
-  
-    if (!result) {
-      res.status(404).json({
+  exports.getTours = async (req, res) => {
+    try {
+      
+      const tours = await tourmodel.find();
+      res.status(200).json({
         staus: 'success',
-        error: 'data not found',
+        data: { tours: tours },
       });
+    } catch (error) {
+
+      res.status(400).json({
+        status:'fail',
+        message:error
+      })
+      
+    }
+   
+  };
+  
+  exports.postTour = async (req, res) => {
+
+    try {
+      const newTour = await tourmodel.create(req.body);
+      res.status(200).json({
+        status:"success",
+        data:{tour:newTour}
+      });
+      
+    } catch (error) {
+
+      res.status(400).json({
+        status:'fail',
+        message:error
+      });
+    
     }
   
-    res.status(200).json({
-      staus: 'success',
-      data: { tours: result },
-    });
   };
+  
+  exports.getTour = async (req, res) => {
+
+    try {
+      const tour = await tourmodel.findById(req.params.id);
+      res.status(200).json({
+        status:'success',
+        data:{tour:tour}
+      });
+      
+    } catch (error) {
+
+      res.status(400).json({
+        status:'fail',
+        message:error
+      });
+      
+    }
+ 
+  };
+
+  exports.updateTour = async (req,res)=>{
+    try {
+
+      const tour = await tourmodel.findByIdAndUpdate(req.params.id,req.body,{
+        new:true,
+        runValidators:true
+      });
+      res.status(200).json({
+        status:'success',
+        data:{tour:tour}
+      });
+      
+    } catch (error) {
+
+      res.status(400).json({
+        status:'fail',
+        message:error
+      });
+      
+    }
+  }

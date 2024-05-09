@@ -12,7 +12,7 @@ app.use(express.json());
 
 app.use('/', tourRoutes);
 
-// app.use('/api/v1/users',userRoutes);
+app.use('/users',userRoutes);
 
 mongoose
   .connect(process.env.MONGO_DB_URL)

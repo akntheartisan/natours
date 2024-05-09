@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const schema = mongoose.Schema;
 const validator = require('validator');
+const bcrypt = require('bcrypt');
 
 const userschema = new schema({
   name: {
@@ -29,6 +30,13 @@ const userschema = new schema({
     },
     message: 'password is not same',
   },
+});
+
+userschema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  this.confirmPassword = undefined;
+  next();
 });
 
 module.exports = mongoose.model('user', userschema);

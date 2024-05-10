@@ -33,11 +33,10 @@ exports.getTours = async (req, res) => {
   try {
     //Build the Query
     // const query = tourmodel.find(req.query);
-    let queryString = tourmodel.find;
+    let queryString = tourmodel.find(queryObj);
     // Execute the resulting document
-    const tour = await query;
+    const tours = await queryString;
 
-    // Send back a response with the data in it
     res.status(200).json({
       staus: 'success',
       data: { tours: tours },

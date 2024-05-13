@@ -11,7 +11,7 @@ exports.signup = async (req, res, next) => {
       email: req.body.email,
       password: req.body.password,
       confirmPassword: req.body.confirmPassword,
-      passwordChangedAt:req.body.passwordChangedAt,
+      passwordChangedAt: req.body.passwordChangedAt,
     });
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_Secret, {
@@ -44,7 +44,7 @@ exports.login = async (req, res, next) => {
   }
 
   //after getting username and password check if it is correct by comparing token original token and test token
-  
+
   const userCheck = await userModel.findOne({ email }).select('+password');
 
   if (
@@ -56,7 +56,7 @@ exports.login = async (req, res, next) => {
       message: 'Authentication failed',
     });
   }
- // if correct proceed signin operation
+  // if correct proceed signin operation
   const token = jwt.sign({ id: userCheck._id }, process.env.JWT_Secret, {
     expiresIn: process.env.JWT_Expiration,
   });
@@ -68,8 +68,7 @@ exports.login = async (req, res, next) => {
 };
 
 exports.protect = async (req, res, next) => {
-
-    //getting token and check if it exists
+  //getting token and check if it exists
   let token = req.header('Authorization').split(' ')[1];
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_Secret);
 
@@ -88,82 +87,79 @@ exports.protect = async (req, res, next) => {
   //2)verify token
 
   try {
-
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_Secret);
-   
   } catch (error) {
-
     res.status(401).json({
-        status:'fail',
-        message:'Token expired please login again'
-    })
-    
+      status: 'fail',
+      message: 'Token expired please login again',
+    });
   }
 
   //3) check if user still exists
-     
+
   const checkUser = await userModel.findById(decoded.id);
 
-   if(!checkUser){
-    return  res.status(401).json({
-        status:'fail',
-        message:'This user is no longer exists'
-    })
-   }
-
-   //4) checking for password change 
-
-   if (checkUser.passwordChangedAfter(decoded.iat)){
+  if (!checkUser) {
     return res.status(401).json({
-        status:'fail',
-        message:'Password changed, please login again'
-    })
-   };
+      status: 'fail',
+      message: 'This user is no longer exists',
+    });
+  }
 
-   req.user = checkUser
+  //4) checking for password change
 
-   console.log('current user:'+req.user);
+  if (checkUser.passwordChangedAfter(decoded.iat)) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'Password changed, please login again',
+    });
+  }
+
+  req.user = checkUser;
+
+  console.log('current user:' + req.user);
 
   next();
 };
 
-exports.forgetPassword = async (req,res,next)=>{
+exports.forgetPassword = async (req, res, next) => {
+  //1)get user from the posted mail
 
-    //1)get user from the posted mail
+  const user = await userModel.findOne({ email: req.body.email });
 
-  const user = await userModel.findOne({email:req.body.email});
-
-  if(!user){
+  if (!user) {
     return res.status(402).json({
-        status:'fail',
-        message:'there is no user for this mail'
-    })
+      status: 'fail',
+      message: 'there is no user for this mail',
+    });
   }
 
   //2) generate the random token
 
   const resetToken = user.createPasswordResetToken();
-  await user.save();
+  await user.save({ validateBeforeSave: false });
 
   //3) send it to your mail
 
-  const url = `${req.protocol}://${req.get('host')}/users/resetPassword/${resetToken}`;
-  const message = `this is the password reset link ${url}.\n click here.`
+  const url = `${req.protocol}://${req.get(
+    'host'
+  )}/users/resetPassword/${resetToken}`;
+  const message = `this is the password reset link ${url}.\n click here.`;
 
-  await sendMail({
-    email: user.email,
-    subject:'your password reset message',
-    message:message
-  })
+  try {
+    await sendMail({
+      email: user.email,
+      subject: 'your password reset message',
+      message: message,
+    });
 
-  res.status(200).json({
-    status:'success',
-    message:'token sent to mail'
-  })
+    res.status(200).json({
+      status: 'success',
+      message: 'token sent to mail',
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-
-}
-
-exports.resetPassword = async (req,res,next)=>{
-  
-}
+exports.resetPassword = async (req, res, next) => {};
